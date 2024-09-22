@@ -24,13 +24,15 @@ fi
 header
 ### Correct apt sources
 # remove dvd reference
-echo "Removing Debian 12 dvd reference..."
-sed -i 's/deb cdrom.*//' /etc/apt/sources.list
+echo "Disabling Debian 12 dvd reference..."
+sed -i 's/deb cdrom/#deb cdrom/' /etc/apt/sources.list
 
 # configure repos
 echo "Reconfiguring apt sources..."
-repos="bookworm main non-free-firmware contrib"
-sed  -i "/s/bookworm.*/$repos/g" /etc/apt/sources.list
+repos="main non-free-firmware contrib"
+sed  -i "/s/bookworm .*/bookworm $repos/g" /etc/apt/sources.list
+sed  -i "/s/bookworm-updates .*/bookworm-updates $repos/g" /etc/apt/sources.list
+sed  -i "/s/bookworm-security .*/bookworm-security $repos/g" /etc/apt/sources.list
 
 ### Update and install additional packages
 # update
