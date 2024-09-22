@@ -21,8 +21,6 @@ if ! whiptail --backtitle "Debian 12" --title "Post-Install" --yesno "This scrip
 	exit
 fi
 
-read -p"Press [enter] to continue..." temp
-
 header
 ### Correct apt sources
 # remove dvd reference
