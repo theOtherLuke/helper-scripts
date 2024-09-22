@@ -30,7 +30,7 @@ sed -i 's/deb cdrom.*//' /etc/apt/sources.list
 # configure repos
 echo "Reconfiguring apt sources..."
 repos="bookworm main non-free-firmware contrib"
-sed  -i "/s/bookworm.*/$repos/g"
+sed  -i "/s/bookworm.*/$repos/g" /etc/apt/sources.list
 
 ### Update and install additional packages
 # update
