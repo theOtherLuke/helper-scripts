@@ -57,9 +57,9 @@ sed -i 's/deb cdrom/#deb cdrom/' /etc/apt/sources.list
 # configure repos
 echo "Reconfiguring apt sources..."
 repos="main non-free-firmware contrib"
-sed  -i "/s/bookworm .*/bookworm $repos/g" /etc/apt/sources.list
-sed  -i "/s/bookworm-updates .*/bookworm-updates $repos/g" /etc/apt/sources.list
-sed  -i "/s/bookworm-security .*/bookworm-security $repos/g" /etc/apt/sources.list
+sed  -i -r "s/bookworm\ .*/bookworm $repos/g" /etc/apt/sources.list
+sed  -i -r "s/bookworm-updates\ .*/bookworm-updates $repos/g" /etc/apt/sources.list
+sed  -i -r "s/bookworm-security\ .*/bookworm-security $repos/g" /etc/apt/sources.list
 
 ### Update and install additional packages
 # update
