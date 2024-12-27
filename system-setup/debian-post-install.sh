@@ -57,9 +57,9 @@ sed -i 's/deb cdrom/#deb cdrom/' /etc/apt/sources.list
 # configure repos
 echo "Reconfiguring apt sources..."
 repos="main non-free-firmware contrib"
-sed  -i -r "s/bookworm\ .*/bookworm $repos/g" /etc/apt/sources.list
-sed  -i -r "s/bookworm-updates\ .*/bookworm-updates $repos/g" /etc/apt/sources.list
-sed  -i -r "s/bookworm-security\ .*/bookworm-security $repos/g" /etc/apt/sources.list
+sed  -i -r "s/bookworm .*/bookworm $repos/g" /etc/apt/sources.list
+sed  -i -r "s/bookworm-updates .*/bookworm-updates $repos/g" /etc/apt/sources.list
+sed  -i -r "s/bookworm-security .*/bookworm-security $repos/g" /etc/apt/sources.list
 
 ### Update and install additional packages
 # update
@@ -70,5 +70,9 @@ apt update
 apt upgrade -y
 
 # install additional packages
-packages="btop neofetch cmatrix" # change to your needs
-apt install $packages -y
+packages="btop neofetch cmatrix sudo" # change to your needs
+apt install "$packages" -y
+read -rp "Enter any users to add to sudoers now, space-separated list : " usernames
+for u_name in "${usernames[@]}" ; do
+     usermod -aG sudo "$u_name"
+done
