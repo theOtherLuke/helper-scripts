@@ -70,9 +70,6 @@ apt update
 apt upgrade -y
 
 # install additional packages
-packages="btop neofetch cmatrix sudo" # change to your needs
+packages="btop htop neofetch cmatrix sudo" # change to your needs
 apt install "$packages" -y
-read -rp "Enter any users to add to sudoers now, space-separated list : " usernames
-for u_name in "${usernames[@]}" ; do
-     usermod -aG sudo "$u_name"
-done
+
