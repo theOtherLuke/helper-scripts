@@ -71,5 +71,5 @@ apt upgrade -y
 
 # install additional packages
 packages="btop htop neofetch cmatrix sudo" # change to your needs
-apt install "$packages" -y
+apt install $packages -y
 
