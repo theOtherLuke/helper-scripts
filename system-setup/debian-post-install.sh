@@ -73,3 +73,8 @@ apt upgrade -y
 packages="btop htop neofetch cmatrix sudo" # change to your needs
 apt install $packages -y
 
+# configure tabs for nano
+cat << 'EOF' > ~/.nanorc
+set tabsize 4
+set tabstospaces
+EOF
