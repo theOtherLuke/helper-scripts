@@ -116,14 +116,14 @@ while true; do
             else
                 cores=""
             fi
-
+            cores_qm=${cores// /,}
             if [ "$type" == "LXC" ]; then
                 conf="/etc/pve/lxc/$id.conf"
                 if [ -n "$cores" ]; then
                     if grep -q '^lxc.cgroup2.cpuset.cpus' "$conf"; then
-                        sed -i "s/^lxc.cgroup2.cpuset.cpus=.*/lxc.cgroup2.cpuset.cpus=$cores/" "$conf"
+                        sed -i "s/^lxc.cgroup2.cpuset.cpus=.*/lxc.cgroup2.cpuset.cpus=$cores_qm/" "$conf"
                     else
-                        echo "lxc.cgroup2.cpuset.cpus=$cores" >> "$conf"
+                        echo "lxc.cgroup2.cpuset.cpus=$cores_qm" >> "$conf"
                     fi
                 else
                     sed -i '/^lxc.cgroup2.cpuset.cpus/d' "$conf"
@@ -132,10 +132,8 @@ while true; do
                 conf="/etc/pve/qemu-server/$id.conf"
                 if [ -n "$cores" ]; then
                     if grep -q '^affinity:' "$conf"; then
-                        cores_qm=${cores// /,}
                         sed -i "s/^affinity:.*/affinity: $cores_qm/" "$conf"
                     else
-                        cores_qm=${cores// /,}
                         echo "affinity: $cores_qm" >> "$conf"
                     fi
                 else
