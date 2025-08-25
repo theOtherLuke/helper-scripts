@@ -68,7 +68,7 @@ while read ctid status lock name; do
         name="$lock"
     fi
     cores=$(awk -F': ' '/^lxc.cgroup2.cpuset.cpus:/ {print $2}' <<< "$conf")
-    current_affinity["$ctid"]="$(map-affinity "$cores")"
+    current_affinity["$ctid"]="$cores"
     proposed_affinity["$ctid"]="$cores"
     clients_name["$ctid"]="$name"
     clients_type["$ctid"]="LXC"
@@ -78,7 +78,7 @@ done < <(pct list | tail -n +2)
 while read vmid name rest; do
     conf=$(qm config "$vmid")
     cores=$(awk -F': ' '/^affinity:/ {print $2}' <<< "$conf")
-    current_affinity["$vmid"]="$(map-affinity "$cores")"
+    current_affinity["$vmid"]="$cores"
     proposed_affinity["$vmid"]="$cores"
     clients_name["$vmid"]="$name"
     clients_type["$vmid"]="vm"
@@ -101,7 +101,7 @@ while true; do
         proposed="${proposed_affinity[$key]}"
         display_state=$(map-affinity "$proposed")
 
-        [ "$display_state" != "$current" ] && aff_display="*${display_state}" || aff_display="$display_state"
+        [ "$proposed" != "$current" ] && aff_display="*${display_state}" || aff_display="$display_state"
 
         padded_name="$name"
         spaces=$((max_name - ${#name} + 2))
