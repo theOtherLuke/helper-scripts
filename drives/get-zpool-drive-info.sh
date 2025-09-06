@@ -27,7 +27,7 @@ while read -r pool; do
     while read -r path; do
         realdev=$(readlink -f "$path" 2>/dev/null || echo "$path")
         base=$(lsblk -no PKNAME "$realdev" 2>/dev/null)
-        uuid="${path##*/}"
+        [[ $pool == "boot-pool" ]] && uuid=$(lsblk -lo name,partuuid | awk -v d="${path##*/}" '$1 == d {print $2}') || uuid="${path##*/}"
         serial="${serial_by_name[$base]}"
         # apply color to lines matching drive uuid, name, or serial
         c1=
