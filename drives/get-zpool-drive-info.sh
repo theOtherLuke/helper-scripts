@@ -32,7 +32,7 @@ while read -r pool; do
         # apply color to lines matching drive uuid, name, or serial
         c1=
         for a in "$@"; do
-            [[ $uuid =~ $a ]] || [[ $a =~ $base ]] || [[ $serial =~ $a ]] && c1='\e[1;32m'
+            [[ $uuid =~ $a ]] || [[ $a == $base ]] || [[ $serial =~ $a ]] && c1='\e[1;32m'
         done
         printf "${c1}%40s : %-5s : %-10s\e[0m\n" "$uuid" "$base" "$serial"
     done < <(zpool status -P "$pool" | awk ' $1=="config:" {conf=1; next} conf && $1=="errors:" {conf=0} conf && $1 ~ /^\/dev\// {print $1}')
