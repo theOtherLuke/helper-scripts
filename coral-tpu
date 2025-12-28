@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# install coral tpu drivers for m.2 coral tpu
+if [[ $EUID != 0 ]]; then
+    printf "\e[1;31m%s\e[0m\n" "Must be run as root or sudo!"
+    exit 1
+fi
+echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list
+
+curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/google-coral-edgetpu.gpg
+
+apt update
+apt install gasket-dkms libedgetpu1-std -y
+
+sh -c "echo 'SUBSYSTEM==\"apex\", MODE=\"0660\", GROUP=\"docker\"' >> /etc/udev/rules.d/65-apex.rules"
