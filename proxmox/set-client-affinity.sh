@@ -1,5 +1,25 @@
 #!/usr/bin/env bash
 
+show_usage() {
+    cat <<EOF
+Usage: set-client-affinity.sh [command]
+
+Commands:
+  show      Display the current client affinity configuration
+  <none>    Run the utility normally
+
+EOF
+    exit 1
+}
+
+if [[ -n $1 ]]; then
+    case "$1" in
+        show) command=show;;
+        help) show_usage;;
+        *) show_usage;;
+    esac
+fi
+
 p_threshold=4800 # speed threshold in mhz for determining p-core vs e-core
 
 # Gather P-cores and E-cores safely preserving core 0
@@ -90,6 +110,37 @@ for key in "${!clients_name[@]}"; do
     len=${#clients_name[$key]}
     (( len > max_name )) && max_name=$len
 done
+
+get_hostname() {
+    vmid=$1
+    if [[ -f /etc/pve/lxc/$vmid.conf ]]; then
+        pct config $vmid | awk -F': ' '/^hostname/ {print $2}'
+        return
+    elif [[ -f /etc/pve/qemu-server/$vmid.conf ]]; then
+        qm config $vmid | awk -F': ' '/^name/ {print $2}'
+    else
+        printf "n/a"
+    fi
+}
+
+show_current() {
+    printf "\e[1;35m%s\e[0m\n" "Collecting client information..."
+    declare -A vmid_names vmid_affinity
+    name_length=0
+    for i in "${!current_affinity[@]}"; do
+        vmid_names[$i]="$(get_hostname $i)"
+        vmid_affinity[$i]="$(map-affinity ${current_affinity[$i]})"
+        (( ${#vmid_names[$i]} > name_length )) && name_length=${#vmid_names[$i]}
+    done
+    printf "\n\e[1;34m%-10s | %-*s | %s \e[0m\n" "VMID/CTID" "$name_length" "NAME" "AFFINITY"
+    for i in "${!current_affinity[@]}"; do
+        printf "%-10s | %-*s | %s\n" "$i" "$name_length" "${vmid_names[$i]}" "${vmid_affinity[$i]}"
+    done
+    printf "\n"
+    exit
+}
+
+[[ $command == "show" ]] && show_current
 
 # Main menu loop
 while true; do
