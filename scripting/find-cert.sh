@@ -1,34 +1,69 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cleanup() {
+    trap - EXIT TERM INT
+    printf '\e[0m'
+    exit
+}
+trap cleanup EXIT TERM INT
+if [[ -z ${1:-} ]]; then
+    printf "%s\n" "Missing argument."
+    exit 1
+fi
 
 DOMAIN="$1"
-
+WARN_DAYS=30
+WARN_SECONDS=$((WARN_DAYS * 86400))
+NOW=$(date +%s)
 NPM_ROOT="${2:-/opt/nginx-proxy-manager/letsencrypt/live}"
 
 find_cert() {
     local cert
+    local expires
+    local date
 
     for cert in "$NPM_ROOT"/npm-*/fullchain.pem; do
         [[ -f "$cert" ]] || continue
+
         if openssl x509 -in "$cert" -noout -ext subjectAltName |
             tr ',' '\n' |
             sed 's/^ *//' |
-            awk -v d="DNS:$DOMAIN" '$0 == d { found=1 } END { exit !found }'
+            grep -Fxq "DNS:$DOMAIN"
         then
-            local enddate=$(openssl x509 -in "$cert" -noout -enddate)
-            printf "%s,%s" "$cert" "$enddate"
-            return 0
+            expires=$(openssl x509 -in "$cert" -noout -enddate | cut -d= -f2)
+            date=$(date -d "$expires" +%s)
+
+            printf "%s,%s,%s\n" "$cert" "$expires" "$date"
         fi
-
     done
-
-    return 1
 }
 
-CERT=$(find_cert) || {
-    printf "\e[1;31mNo NPM certificate found for \e[1;33m%s\e[0m\n" "$DOMAIN"
-    exit 1
+status_color() {
+    local remaining
+    remaining=$(($1-NOW))
+    if (( remaining <= 0 )); then
+        printf $'\e[1;31m'
+    elif (( remaining <= WARN_SECONDS )); then
+        printf $'\e[1;33m'
+    else
+        printf $'\e[1;32m'
+    fi
 }
-IFS="," read -r c e <<< "$CERT"
-printf "Found cert for \e[1;32m%s \e[0m\nExpires: \e[1;35m%s\e[0m\nPath: \e[1;36m%s\e[0m\n" "$DOMAIN" "${e#*=}" "$c"
+
+printf "\n\e[1;34m%s\e[0m\n\n" "Checking for certs for $DOMAIN"
+
+found=false
+
+while IFS="," read -r cert expires epoch; do
+    found=true
+    printf "Found certificate for \e[1;33m%s\e[0m\n" "$DOMAIN"
+    expired_color="$(status_color "$epoch")"
+    days=$(( (epoch - NOW) / 86400))
+    printf "Expires: ${expired_color}%s ( %s days )\e[0m\n" "$expires" "$days"
+    printf "Path: \e[1;36m%s\e[0m\n\n" "$cert"
+done < <(find_cert)
+
+if ! $found; then
+    printf "\e[1;31mNo certs found for \e[1;33m%s\e[0m\n\n" "$DOMAIN"
+fi
 exit
