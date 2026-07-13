@@ -3,13 +3,7 @@ set -euo pipefail
 
 DOMAIN="$1"
 
-NPM_ROOT="${2:-NA}"
-
-if [[ $NPM_ROOT == "NA" ]]; then
-    NPM_ROOT="/opt/nginx-proxy-manager/letsencrypt/live"
-else
-    NPM_ROOT="$2"
-fi
+NPM_ROOT="${2:-/opt/nginx-proxy-manager/letsencrypt/live}"
 
 find_cert() {
     local cert
