@@ -15,7 +15,8 @@ find_cert() {
             sed 's/^ *//' |
             awk -v d="DNS:$DOMAIN" '$0 == d { found=1 } END { exit !found }'
         then
-            printf "%s" "$cert"
+            local enddate=$(openssl x509 -in "$cert" -noout -enddate)
+            printf "%s,%s" "$cert" "$enddate"
             return 0
         fi
 
@@ -28,6 +29,6 @@ CERT=$(find_cert) || {
     printf "\e[1;31mNo NPM certificate found for \e[1;33m%s\e[0m\n" "$DOMAIN"
     exit 1
 }
-
-printf "Found cert for \e[1;32m%s \e[0m: \e[1;35m%s\e[0m\n" "$DOMAIN" "$CERT"
+IFS="," read -r c e <<< "$CERT"
+printf "Found cert for \e[1;32m%s \e[0m\nExpires: \e[1;35m%s\e[0m\nPath: \e[1;36m%s\e[0m\n" "$DOMAIN" "${e#*=}" "$c"
 exit
