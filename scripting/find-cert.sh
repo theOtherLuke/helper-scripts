@@ -15,6 +15,7 @@ find_cert() {
             sed 's/^ *//' |
             awk -v d="DNS:$DOMAIN" '$0 == d { found=1 } END { exit !found }'
         then
+            printf "%s" "$cert"
             return 0
         fi
 
