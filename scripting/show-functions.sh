@@ -29,7 +29,6 @@ trap cleanup EXIT TERM INT
 printf '\e[?1049h\e[?25l'
 usage() {
     cat <<EOF
-
 ${c_blue}Usage:${c_reset}
     show-function.sh [OPTIONS] <script_name>
 
@@ -38,12 +37,15 @@ ${c_blue}Arguments:${c_reset}
 
 ${c_blue}Options:${c_reset}
     -s, --simple         Simple mode: show function with minimal decorations
+    -o, --output         Write the selected function to a file named
+                         <function_name>.sh instead of printing it.
     -h, --help           Show this help message and exit
 
 ${c_blue}Examples:${c_reset}
-    ./show-function.sh my_script.sh
-    ./show-function.sh -s my_script.sh
-
+    ./show-function.sh my_script.sh                # just view on screen
+    ./show-function.sh -s my_script.sh             # simple view
+    ./show-function.sh -o my_script.sh            # write to file
+    ./show-function.sh -s -o my_script.sh         # simple + write to file
 EOF
 }
 
