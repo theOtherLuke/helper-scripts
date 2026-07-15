@@ -17,6 +17,16 @@ c_purple=$(printf "\e[1;35m")
 c_cyan=$(printf "\e[1;36m")
 c_reset=$(printf "\e[0m")
 
+cleanup() {
+    trap - EXIT TERM INT
+    printf '\e[?1049l\e[?25h\e[0m'
+    set +x
+    exit
+}
+
+trap cleanup EXIT TERM INT
+#set -x
+printf '\e[?1049h\e[?25l'
 usage() {
     cat <<EOF
 
@@ -39,10 +49,17 @@ EOF
 
 # --- Step 0: Parse flags ---
 simple_mode=0
-while [[ "$1" =~ ^- ]]; do
+output_mode=0                # ← new variable
+
+while [[ $# -gt 0 && "$1" =~ ^- ]]; do   # loop while we still have options
     case "$1" in
         -s|--simple)
             simple_mode=1
+            shift
+            ;;
+        -o|--output)
+            # make sure the next word exists and is *not* another option
+            output_mode=1
             shift
             ;;
         -h|--help)
@@ -57,21 +74,17 @@ while [[ "$1" =~ ^- ]]; do
     esac
 done
 
+# -----------------------------------------------------------------
+# the remaining positional argument must be the script we want to scan
 if [[ -z $1 ]]; then
     printf "${c_red}No script name specified.${c_reset}\n"
     usage
     exit 1
 fi
 
-if [[ -n $1 ]]; then
-    if [[ -f $1 ]]; then
-        script="$1"
-    else
-        printf "${c_red}Invalid filename :${c_reset} %s\n\n" "$1"
-        usage
-        exit 1
-    fi
-fi
+script=$1                     # we already know it exists (checked later)
+shift                         # discard it – any extra args are ignored on purpose
+# -----------------------------------------------------------------
 
 # Step 1: Parse function names
 mapfile -t functions < <(
@@ -106,6 +119,21 @@ while :; do
 
     selected_function="${functions[$((choice-1))]}"
 
+    if (( output_mode )); then
+        # Build the filename from the function name and add .sh
+        out_file="${selected_function}.sh"
+
+        # Optional: ask before overwriting an existing file
+        if [[ -e $out_file ]]; then
+            printf "${c_yellow}File %s already exists. Overwrite? [y/N] ${c_reset}" "$out_file"
+            read -r answer
+            case "$answer" in
+                y|Y) ;;                     # proceed
+                *)   printf "Aborted.\n"; continue 2   # go back to the selection menu
+            esac
+        fi
+    fi
+
     # Step 4: Find line numbers of function
     read -r start_line end_line < <(
         awk -v fname="$selected_function" '
@@ -119,8 +147,26 @@ while :; do
         ' "$script"
     )
 
-    # Step 5: Display function using bat
-    [[ $simple_mode -eq 1 ]] && stdbuf -oL batcat -p --paging=never --line-range "$start_line":"$end_line" "$script" || stdbuf -oL batcat --style=full --paging=never --line-range "$start_line":"$end_line" "$script"
+    # Step 5: Show (and possibly write) the function
+    bat_cmd=(stdbuf -oL batcat)
+
+    if (( simple_mode )); then
+        bat_cmd+=( -p --paging=never --line-range "$start_line":"$end_line" )
+    else
+        bat_cmd+=( --style=full --paging=never --line-range "$start_line":"$end_line" )
+    fi
+
+    bat_cmd+=("$script")
+
+    if (( output_mode )); then
+        # Write to the automatically‑named file; also show on screen with tee.
+        "${bat_cmd[@]}" | tee "$out_file"
+        printf "${c_green}Function %s written to %s${c_reset}\n" \
+               "$selected_function" "$out_file"
+    else
+        # Normal behaviour – just print to terminal
+        "${bat_cmd[@]}"
+    fi
 
     message="Do you want to see another function?"
     default_choice="n"
@@ -129,4 +175,5 @@ while :; do
         yn=${yn:-$default_choice}
         [[ $yn =~ ^(y|Y)$ ]] && break || [[ $yn =~ ^(n|N)$ ]] && exit 0 || printf "\e[u\r\e[K"
     done
+
 done
